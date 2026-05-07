@@ -1,0 +1,65 @@
+package com.example.demo.Controller;
+
+import com.example.demo.common.Result;
+import com.example.demo.model.entity.UserInfo;
+import com.example.demo.model.dto.UserDTO;
+import com.example.demo.model.vo.UserDetailVO;
+import com.example.demo.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    // 1. 新增用户（注册）- 路径 POST /api/users
+    @PostMapping
+    public Result<String> register(@RequestBody UserDTO userDTO) {
+        return userService.register(userDTO);
+    }
+
+    // 2. 用户登录 - 路径 POST /api/users/login
+    @PostMapping("/login")
+    public Result<String> login(@RequestBody UserDTO userDTO) {
+        return userService.login(userDTO);
+    }
+
+    // 3. 根据 id 查询用户 - 路径 GET /api/users/{id}
+    @GetMapping("/{id}")
+    public Result<String> getUser(@PathVariable("id") Long id) {
+        return userService.getUserById(id);
+    }
+
+    // 任务6新增：分页查询用户列表
+    @GetMapping("/page")
+    public Result<Object> getUserPage(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "5") Integer pageSize) {
+        return userService.getUserPage(pageNum, pageSize);
+    }
+
+    // ===================== 【任务7 新增接口】 =====================
+    // 5. 查询用户详情（多表联查 + Redis缓存）
+    @GetMapping("/{id}/detail")
+    public Result<UserDetailVO> getUserDetail(@PathVariable("id") Long userId) {
+        return userService.getUserDetail(userId);
+    }
+
+    // 6. 更新用户扩展信息
+    @PutMapping("/{id}/detail")
+    public Result<String> updateUserInfo(
+            @PathVariable("id") Long userId,
+            @RequestBody UserInfo userInfo) {
+        userInfo.setUserId(userId);
+        return userService.updateUserInfo(userInfo);
+    }
+
+    // 7. 删除用户
+    @DeleteMapping("/{id}")
+    public Result<String> deleteUser(@PathVariable("id") Long userId) {
+        return userService.deleteUser(userId);
+    }
+}
