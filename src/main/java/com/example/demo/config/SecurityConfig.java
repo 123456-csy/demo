@@ -1,11 +1,14 @@
 package com.example.demo.config;
 
+import com.example.demo.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -17,25 +20,29 @@ import java.util.Collections;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    // 1. 注入 JWT 过滤器
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. 开启 CORS
+                // 开启 CORS
                 .cors().configurationSource(corsConfigurationSource())
                 .and()
-                // 2. 关闭 CSRF
+                // 关闭 CSRF
                 .csrf().disable()
-                // 3. 设置无状态会话
+                // 设置无状态会话
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                // 4. 配置接口放行规则（兼容 2.7 版本写法）
+                // 配置接口放行规则
                 .authorizeRequests()
-                // 放行指定接口
                 .antMatchers("/api/users/login", "/api/users").permitAll()
-                // 其他所有接口默认需要认证
                 .anyRequest().authenticated()
                 .and()
+                // 2. 将 JWT 过滤器添加到用户名密码过滤器之前
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 // 关闭默认登录页和 HTTP Basic 认证
                 .formLogin().disable()
                 .httpBasic().disable();
@@ -47,7 +54,6 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 替换 List.of() 为 Java 8 支持的写法
         configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
